@@ -1,0 +1,8 @@
+qiskit==1.2.4
+qiskit-nature==0.7.2
+qiskit-optimization==0.6.1
+mitiq==0.31.0
+numpy>=1.23
+matplotlib>=3.7
+pandas>=2.0
+notebook>=7.0
