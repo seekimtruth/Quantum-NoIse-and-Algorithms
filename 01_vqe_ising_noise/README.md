@@ -41,6 +41,21 @@ To counteract these effects, the project implements **Zero-Noise Extrapolation (
 
 ### A. Effect of Noise — Distorted Energy Landscape
 
+Before analyzing the energy landscape or noise extrapolation, it is crucial to visualize how **noise directly affects the optimization process**.
+
+| | |
+|:--:|:--:|
+| ![VQE Convergence](./zne_results/vqe_convergence.png) |  
+| *Noiseless VQE (blue) converges smoothly to the exact ground energy (−1.28057).  
+Noisy VQE (red) oscillates heavily during early iterations and converges to a biased value (−1.21030), demonstrating the detrimental impact of decoherence and shot noise.* |
+
+**Observation:**  
+- The optimizer (SPSA) maintains stability under ideal simulation but struggles under realistic noise.  
+- Despite reaching apparent convergence, the noisy run remains **~0.07 Ha above** the true ground state.  
+- This quantitative gap is later mitigated using the ZNE method.
+
+---
+
 To understand how noise disrupts VQE optimization, a 2-parameter energy landscape was visualized:
 
 | | | |
@@ -52,23 +67,65 @@ To understand how noise disrupts VQE optimization, a 2-parameter energy landscap
 
 ---
 
-###  B. Error Mitigation — ZNE & Statistical Limits
+### B. Error Mitigation — Linear, Quadratic, and Statistical Analyses
 
-ZNE was applied by running VQE at different noise scales (1, 3, 5) and fitting a quadratic model to extrapolate the zero-noise energy.  
-This revealed the **stochastic variability** inherent in VQE optimization.
+This section demonstrates how **Zero-Noise Extrapolation (ZNE)** can mitigate quantum noise and how the choice of **fit model** and **sampling strategy** impacts the final result.  
+VQE runs were performed at several noise-scaling factors *(s = 1, 3, 5)*, and their ground-state energies were extrapolated to the zero-noise limit *(s → 0)*.
+
+---
+
+#### **1️⃣ Linear Extrapolation**
+
+A simple linear regression was applied to the noisy energy measurements:
+
+| | |
+|:--:|:--:|
+|![zne linear](./zne_results/zne_linear.png)|
+| *Linear fit (E = 0.001·s − 1.211) predicts a mitigated energy of −1.21051, improving slightly over the unmitigated noisy value (−1.21030) but still far from the true energy (−1.28062).* |
+
+---
+
+#### **2️⃣ Quadratic Extrapolation**
+
+Next, a second-order polynomial was fitted to capture nonlinear behavior:
+
+| | |
+|:--:|:--:|
+|![zne quadratic](./zne_results/zne_quad.png)|
+| *Quadratic fit (E = −0.000·s² + 0.003·s − 1.212) gives a mitigated energy of −1.21248 — a marginal but more stable improvement over the linear fit.* |
+
+**Observation:**  
+Quadratic extrapolation smooths the statistical noise and better models the gradual distortion of the energy curve due to compound noise effects.
+
+---
+
+#### **3️⃣ Statistical Robustness: Single vs Averaged Runs**
+
+To evaluate the stochastic limits of ZNE, each VQE measurement was repeated 10 times per noise scale and averaged:
+
+| | |
+|:--:|:--:|
+|![zne quadratic comparison single vs avg](./zne_results/zne_quad_single_vs_avg10.png)|
+| *Red: single-run measurements and fit (E₀ = −1.21248). Blue: averaged (10 runs) measurements and fit (E₀ = −1.23102). Exact energy = −1.28062.* |
 
 **Key findings:**
 
-1. 🟩 **Green line = Exact ground energy**  
-2. 🟥 **Red X / dashed line = Single-run ZNE** → large variance from shot noise and optimizer stochasticity; extrapolation unreliable.  
-3. 🟦 **Blue O / solid line = Averaged ZNE** → averaging 10 runs per noise scale produces a smooth fit.  
-4. **Blue star = Final extrapolated value (−1.24286)** → closer to the ideal (−1.28062) than the unmitigated noisy result (−1.208).
+1. **Single-run ZNE (red)** shows high variance and unreliable extrapolation due to stochastic optimizer and shot noise.  
+2. **Averaged ZNE (blue)** significantly reduces variance and tracks the ideal energy more closely.  
+3. The mitigated energy (−1.23102) from the averaged case approaches the exact value (−1.28062), demonstrating that **averaging is essential for trustworthy noise mitigation**.
 
-![zne linear](./zne_results/zne_linear.png)
+---
 
-![zne quadratic](./zne_results/zne_quad.png)
+**Summary:**  
+| Method | Mitigated Energy | Error vs. Exact | Comment |
+|:-------|:----------------:|:----------------:|:---------|
+| Linear ZNE | −1.21051 | +0.070 | Minimal correction, underfitting |
+| Quadratic ZNE | −1.21248 | +0.068 | Slightly improved, still noisy |
+| Averaged ZNE (10 runs) | −1.23102 | +0.050 | Best stability, closest to true value |
 
-![zne quadratic comparison single vs avg](./zne_results/zne_quad_single_vs_avg10.png)
+> ✅ Averaging across multiple runs combined with higher-order extrapolation provides the most robust and physically consistent noise-mitigation outcome.
+
+
 ---
 
 ## 💡 Conclusions & Takeaways
