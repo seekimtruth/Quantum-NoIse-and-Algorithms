@@ -140,9 +140,13 @@ To evaluate the stochastic limits of ZNE, each VQE measurement was repeated 10 t
 ## 📂 Repository Structure
 
 01_vqe_ising_noise/
+
 │
+
 ├── 01_vqe_ising_noise.ipynb	(Main notebook)
+
 ├── zne_results	(ZNE plots)
+
 ├── README.md 	(This file)
 
 
